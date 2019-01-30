@@ -3,7 +3,8 @@ const $ = require('cheerio');
 const _ = require('underscore');
 
 const {
-  GraphQLString
+  GraphQLString,
+  GraphQLBoolean
 } = graphql;
 const recursiveArgs = {
   elem: {
@@ -37,6 +38,15 @@ const element = new graphql.GraphQLObjectType({
       resolve: (root, args) => selector(root, args),
       type: new graphql.GraphQLList(element),
     },
+    content: {
+      type: graphql.GraphQLString,
+      description: 'The HTML content of the subnodes',
+      args: recursiveArgs,
+      resolve(root, { elem }) {
+        var $root = elem ? $(root).find(elem) : $(root)
+        return $root.html()
+      },
+    },
     count: {
       args: recursiveArgs,
       description: 'Get a count of provided elements',
@@ -55,26 +65,51 @@ const element = new graphql.GraphQLObjectType({
     },
     html: {
       description: 'The inner html of the element',
+      args: recursiveArgs,
       resolve: root => {
-        console.log(root.length);
-        return $(root).html()
+        var $root = elem ? $(root).find(elem) : $(root)
+
+        return $root.html()
       },
       type: GraphQLString
     },
     text: {
-      description: 'The inner text of the element',
-      resolve: root => $(root).text(),
       type: GraphQLString,
+      description: 'The text content of the selected DOM node',
+      args: recursiveArgs,
+      resolve(root, { elem }) {
+        var $root = elem ? $(root).find(elem) : $(root)
+
+        return $root.text()
+      },
     },
     href: {
-      description: 'Get the href of the element',
-      resolve: root => $(root).attr('href'),
       type: GraphQLString,
+      description: 'Get the href of the element',
+      args: recursiveArgs,
+      resolve(root, { elem }) {
+        var $root = elem ? $(root).find(elem) : $(root)
+
+        return $root.attr('href')
+      },
     },
     src: {
       description: 'Get the src of the element',
-      resolve: root => $(root).attr('src'),
+      args: recursiveArgs,
+      resolve(root, { elem }) {
+        var $root = elem ? $(root).find(elem) : $(root)
+
+        return $root.attr('src')
+      },
       type: GraphQLString,
+    },
+    has: {
+      type: GraphQLBoolean,
+      description: 'Returns true if an element with the given selector exists.',
+      args: recursiveArgs,
+      resolve(root, { elem }) {
+        return !!$(root).find(elem).length
+      },
     },
     /**
      * Looks for data attribute on element,
